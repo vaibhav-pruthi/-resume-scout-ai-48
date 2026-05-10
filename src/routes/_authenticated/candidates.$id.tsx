@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Mail, Phone, FileText } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { ArrowLeft, Mail, Phone, FileText, Linkedin, Loader2, Sparkles } from "lucide-react";
 import {
   ResponsiveContainer,
   RadarChart,
@@ -10,7 +13,12 @@ import {
   Radar,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { analyzeResume } from "@/lib/resumes.functions";
 import { StatusBadge } from "./dashboard";
 
 export const Route = createFileRoute("/_authenticated/candidates/$id")({
@@ -31,10 +39,15 @@ type Analysis = {
   summary: string | null;
   job_description: string;
   created_at: string;
+  linkedin_url: string | null;
+  linkedin_summary: string | null;
 };
 
 function CandidateDetail() {
   const { id } = Route.useParams();
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const analyzeFn = useServerFn(analyzeResume);
   const { data, isLoading } = useQuery({
     queryKey: ["candidate", id],
     queryFn: async () => {
@@ -53,9 +66,43 @@ function CandidateDetail() {
     },
   });
 
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [linkedinSummary, setLinkedinSummary] = useState("");
+  const [reanalyzing, setReanalyzing] = useState(false);
+
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data) return null;
   const { candidate, analysis } = data;
+  const effectiveUrl = linkedinUrl || candidate.linkedin_url || "";
+  const effectiveSummary = linkedinSummary || candidate.linkedin_summary || "";
+
+  const reanalyze = async () => {
+    if (!session || !analysis) return;
+    if (!effectiveUrl && !effectiveSummary.trim()) {
+      toast.error("Add a LinkedIn URL or paste profile text first.");
+      return;
+    }
+    try {
+      setReanalyzing(true);
+      const res = await analyzeFn({
+        data: {
+          accessToken: session.access_token,
+          candidateId: candidate.id,
+          jobDescription: analysis.job_description,
+          linkedinUrl: effectiveUrl || undefined,
+          linkedinSummary: effectiveSummary || undefined,
+        },
+      });
+      toast.success(`Re-analyzed with LinkedIn · ATS ${res.atsScore}/100`);
+      await qc.invalidateQueries({ queryKey: ["candidate", id] });
+      setLinkedinUrl("");
+      setLinkedinSummary("");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Re-analysis failed");
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   const radar = analysis
     ? [
@@ -92,9 +139,77 @@ function CandidateDetail() {
               <span className="inline-flex items-center gap-1">
                 <FileText className="h-3.5 w-3.5" /> {candidate.file_name}
               </span>
+              {candidate.linkedin_url && (
+                <a
+                  href={candidate.linkedin_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-foreground hover:underline"
+                >
+                  <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                </a>
+              )}
             </div>
           </div>
           <StatusBadge status={candidate.status} />
+        </div>
+      </div>
+
+      <div className="glass shadow-elegant rounded-2xl p-6">
+        <div className="flex items-center gap-2">
+          <Linkedin className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold">Re-analyze with LinkedIn</h2>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add the candidate&apos;s LinkedIn URL and paste the About / Experience text. The AI will
+          cross-check it against the resume and update the ATS score and recommendation.
+        </p>
+        <div className="mt-4 grid gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="li-url">LinkedIn URL</Label>
+            <Input
+              id="li-url"
+              type="url"
+              placeholder={candidate.linkedin_url ?? "https://www.linkedin.com/in/username"}
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="li-sum">Profile text</Label>
+            <Textarea
+              id="li-sum"
+              rows={5}
+              placeholder={
+                candidate.linkedin_summary
+                  ? "Previously saved — leave blank to reuse, or paste new text."
+                  : "Paste the About + Experience sections from LinkedIn."
+              }
+              value={linkedinSummary}
+              onChange={(e) => setLinkedinSummary(e.target.value)}
+              maxLength={15000}
+            />
+          </div>
+          <div>
+            <Button
+              onClick={reanalyze}
+              disabled={reanalyzing || !analysis}
+              className="bg-gradient-primary shadow-elegant"
+            >
+              {reanalyzing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {reanalyzing ? "Re-analyzing…" : "Re-analyze with LinkedIn"}
+            </Button>
+            {!analysis && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Run the initial analysis first.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

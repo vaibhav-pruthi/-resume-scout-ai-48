@@ -24,6 +24,8 @@ export type Database = {
           id: string
           interview_questions: Json
           job_description: string
+          linkedin_summary: string | null
+          linkedin_url: string | null
           missing_skills: Json
           recommendation: string
           strengths: Json
@@ -41,6 +43,8 @@ export type Database = {
           id?: string
           interview_questions?: Json
           job_description: string
+          linkedin_summary?: string | null
+          linkedin_url?: string | null
           missing_skills?: Json
           recommendation?: string
           strengths?: Json
@@ -58,6 +62,8 @@ export type Database = {
           id?: string
           interview_questions?: Json
           job_description?: string
+          linkedin_summary?: string | null
+          linkedin_url?: string | null
           missing_skills?: Json
           recommendation?: string
           strengths?: Json
@@ -83,6 +89,8 @@ export type Database = {
           file_name: string
           file_path: string
           id: string
+          linkedin_summary: string | null
+          linkedin_url: string | null
           name: string | null
           phone: string | null
           raw_text: string | null
@@ -95,6 +103,8 @@ export type Database = {
           file_name: string
           file_path: string
           id?: string
+          linkedin_summary?: string | null
+          linkedin_url?: string | null
           name?: string | null
           phone?: string | null
           raw_text?: string | null
@@ -107,6 +117,8 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+          linkedin_summary?: string | null
+          linkedin_url?: string | null
           name?: string | null
           phone?: string | null
           raw_text?: string | null
