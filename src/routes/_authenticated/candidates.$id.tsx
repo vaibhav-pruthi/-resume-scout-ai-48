@@ -186,7 +186,25 @@ function CandidateDetail() {
               )}
             </div>
           </div>
-          <StatusBadge status={candidate.status} />
+          <div className="flex flex-col items-end gap-2">
+            <StatusBadge status={candidate.status} />
+            <Select
+              value={candidate.status}
+              onValueChange={updateStatus}
+              disabled={updatingStatus}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Change status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
