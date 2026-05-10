@@ -3,7 +3,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Mail, Phone, FileText, Linkedin, Loader2, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  FileText,
+  Linkedin,
+  Loader2,
+  Sparkles,
+  History,
+  StickyNote,
+  Save,
+} from "lucide-react";
 import {
   ResponsiveContainer,
   RadarChart,
@@ -25,10 +36,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { analyzeResume } from "@/lib/resumes.functions";
 import { StatusBadge } from "./dashboard";
 
-const STATUS_OPTIONS = [
+type StatusValue = "shortlisted" | "review" | "rejected" | "pending";
+
+const STATUS_OPTIONS: { value: StatusValue; label: string }[] = [
   { value: "shortlisted", label: "Shortlisted" },
   { value: "review", label: "Review" },
   { value: "rejected", label: "Rejected" },
@@ -57,15 +78,24 @@ type Analysis = {
   linkedin_summary: string | null;
 };
 
+type HistoryRow = {
+  id: string;
+  previous_status: string | null;
+  new_status: string;
+  note: string | null;
+  created_at: string;
+};
+
 function CandidateDetail() {
   const { id } = Route.useParams();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const qc = useQueryClient();
   const analyzeFn = useServerFn(analyzeResume);
+
   const { data, isLoading } = useQuery({
     queryKey: ["candidate", id],
     queryFn: async () => {
-      const [c, a] = await Promise.all([
+      const [c, a, h] = await Promise.all([
         supabase.from("candidates").select("*").eq("id", id).single(),
         supabase
           .from("analyses")
@@ -74,40 +104,96 @@ function CandidateDetail() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("candidate_status_history" as any)
+          .select("*")
+          .eq("candidate_id", id)
+          .order("created_at", { ascending: false }),
       ]);
       if (c.error) throw c.error;
-      return { candidate: c.data, analysis: (a.data as Analysis | null) ?? null };
+      return {
+        candidate: c.data,
+        analysis: (a.data as Analysis | null) ?? null,
+        history: ((h.data as any) ?? []) as HistoryRow[],
+      };
     },
   });
 
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [linkedinSummary, setLinkedinSummary] = useState("");
   const [reanalyzing, setReanalyzing] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const updateStatus = async (status: string) => {
-    if (!data) return;
+  // Status change dialog state
+  const [pendingStatus, setPendingStatus] = useState<StatusValue | null>(null);
+  const [changeNote, setChangeNote] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
+
+  // HR notes
+  const [hrNotes, setHrNotes] = useState<string | null>(null);
+  const [savingNotes, setSavingNotes] = useState(false);
+
+  const confirmStatusChange = async () => {
+    if (!data || !pendingStatus || !user) return;
+    const previous = data.candidate.status;
+    if (previous === pendingStatus) {
+      setPendingStatus(null);
+      return;
+    }
     try {
-      setUpdatingStatus(true);
-      const { error } = await supabase
+      setSavingStatus(true);
+      const { error: updErr } = await supabase
         .from("candidates")
-        .update({ status })
+        .update({ status: pendingStatus })
         .eq("id", id);
-      if (error) throw error;
-      toast.success(`Status set to ${status}`);
-      await qc.invalidateQueries({ queryKey: ["candidate", id] });
-      await qc.invalidateQueries({ queryKey: ["candidates"] });
-      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      if (updErr) throw updErr;
+
+      const { error: histErr } = await supabase
+        .from("candidate_status_history" as any)
+        .insert({
+          candidate_id: id,
+          user_id: user.id,
+          previous_status: previous,
+          new_status: pendingStatus,
+          note: changeNote.trim() || null,
+        });
+      if (histErr) throw histErr;
+
+      toast.success(`Status updated to ${pendingStatus}`);
+      setPendingStatus(null);
+      setChangeNote("");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["candidate", id] }),
+        qc.invalidateQueries({ queryKey: ["candidates"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to update status");
     } finally {
-      setUpdatingStatus(false);
+      setSavingStatus(false);
+    }
+  };
+
+  const saveNotes = async () => {
+    try {
+      setSavingNotes(true);
+      const { error } = await supabase
+        .from("candidates")
+        .update({ hr_notes: (hrNotes ?? "").trim() || null } as any)
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Notes saved");
+      await qc.invalidateQueries({ queryKey: ["candidate", id] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to save notes");
+    } finally {
+      setSavingNotes(false);
     }
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data) return null;
-  const { candidate, analysis } = data;
+  const { candidate, analysis, history } = data;
+  const currentNotes = hrNotes ?? (candidate as any).hr_notes ?? "";
   const effectiveUrl = linkedinUrl || candidate.linkedin_url || "";
   const effectiveSummary = linkedinSummary || candidate.linkedin_summary || "";
 
@@ -159,7 +245,9 @@ function CandidateDetail() {
       <div className="glass shadow-elegant rounded-2xl p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{candidate.name ?? "Unnamed candidate"}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {candidate.name ?? "Unnamed candidate"}
+            </h1>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {candidate.email && (
                 <span className="inline-flex items-center gap-1">
@@ -185,27 +273,105 @@ function CandidateDetail() {
                 </a>
               )}
             </div>
+            {analysis && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                AI recommendation:{" "}
+                <span className="font-semibold capitalize text-foreground">
+                  {analysis.recommendation.replace("_", " ")}
+                </span>{" "}
+                · HR final status:{" "}
+                <span className="font-semibold capitalize text-foreground">
+                  {candidate.status}
+                </span>
+              </p>
+            )}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <StatusBadge status={candidate.status} />
-            <Select
-              value={candidate.status}
-              onValueChange={updateStatus}
-              disabled={updatingStatus}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Change status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex w-full max-w-sm flex-col items-stretch gap-2 sm:w-auto">
+            <div className="flex justify-end">
+              <StatusBadge status={candidate.status} />
+            </div>
+            <div className="flex gap-2">
+              <Select
+                value={candidate.status}
+                onValueChange={(v) => setPendingStatus(v as StatusValue)}
+                disabled={savingStatus}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Change status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-right text-[11px] text-muted-foreground">
+              HR override · separate from AI recommendation
+            </p>
           </div>
         </div>
+      </div>
+
+      {/* HR Notes */}
+      <div className="glass shadow-elegant rounded-2xl p-6">
+        <div className="flex items-center gap-2">
+          <StickyNote className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold">HR notes</h2>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Private comments visible only to your team.
+        </p>
+        <Textarea
+          rows={4}
+          className="mt-3"
+          placeholder="Write your impressions, interview feedback, follow-ups…"
+          value={currentNotes}
+          onChange={(e) => setHrNotes(e.target.value)}
+          maxLength={5000}
+        />
+        <div className="mt-3 flex justify-end">
+          <Button onClick={saveNotes} disabled={savingNotes} size="sm">
+            {savingNotes ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save notes
+          </Button>
+        </div>
+      </div>
+
+      {/* Status history */}
+      <div className="glass shadow-elegant rounded-2xl p-6">
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold">Status history</h2>
+        </div>
+        {history.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No status changes yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {history.map((h) => (
+              <li
+                key={h.id}
+                className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/40 p-3 text-sm"
+              >
+                <StatusBadge status={h.previous_status ?? "pending"} />
+                <span className="text-muted-foreground">→</span>
+                <StatusBadge status={h.new_status} />
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {new Date(h.created_at).toLocaleString()}
+                </span>
+                {h.note && (
+                  <p className="w-full text-xs text-muted-foreground">“{h.note}”</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="glass shadow-elegant rounded-2xl p-6">
@@ -351,6 +517,55 @@ function CandidateDetail() {
           </details>
         </>
       )}
+
+      {/* Confirm status change dialog */}
+      <Dialog
+        open={pendingStatus !== null}
+        onOpenChange={(open) => {
+          if (!open && !savingStatus) {
+            setPendingStatus(null);
+            setChangeNote("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm status change</DialogTitle>
+            <DialogDescription>
+              Change status from{" "}
+              <span className="font-semibold capitalize">{candidate.status}</span> to{" "}
+              <span className="font-semibold capitalize">{pendingStatus}</span>?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="change-note">Reason (optional)</Label>
+            <Textarea
+              id="change-note"
+              rows={3}
+              placeholder="Why are you changing this status?"
+              value={changeNote}
+              onChange={(e) => setChangeNote(e.target.value)}
+              maxLength={1000}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setPendingStatus(null);
+                setChangeNote("");
+              }}
+              disabled={savingStatus}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmStatusChange} disabled={savingStatus}>
+              {savingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
