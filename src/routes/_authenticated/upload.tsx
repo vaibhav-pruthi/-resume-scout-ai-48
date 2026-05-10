@@ -71,6 +71,8 @@ function UploadPage() {
           accessToken: session.access_token,
           candidateId: candidate.id,
           jobDescription: jd,
+          linkedinUrl: linkedinUrl.trim() || undefined,
+          linkedinSummary: linkedinSummary.trim() || undefined,
         },
       });
 
