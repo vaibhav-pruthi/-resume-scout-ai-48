@@ -82,12 +82,51 @@ export type Database = {
           },
         ]
       }
+      candidate_status_history: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          new_status: string
+          note: string | null
+          previous_status: string | null
+          user_id: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          new_status: string
+          note?: string | null
+          previous_status?: string | null
+          user_id: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          note?: string | null
+          previous_status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_status_history_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
           created_at: string
           email: string | null
           file_name: string
           file_path: string
+          hr_notes: string | null
           id: string
           linkedin_summary: string | null
           linkedin_url: string | null
@@ -102,6 +141,7 @@ export type Database = {
           email?: string | null
           file_name: string
           file_path: string
+          hr_notes?: string | null
           id?: string
           linkedin_summary?: string | null
           linkedin_url?: string | null
@@ -116,6 +156,7 @@ export type Database = {
           email?: string | null
           file_name?: string
           file_path?: string
+          hr_notes?: string | null
           id?: string
           linkedin_summary?: string | null
           linkedin_url?: string | null
