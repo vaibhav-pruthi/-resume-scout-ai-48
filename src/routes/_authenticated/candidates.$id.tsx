@@ -18,8 +18,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { analyzeResume } from "@/lib/resumes.functions";
 import { StatusBadge } from "./dashboard";
+
+const STATUS_OPTIONS = [
+  { value: "shortlisted", label: "Shortlisted" },
+  { value: "review", label: "Review" },
+  { value: "rejected", label: "Rejected" },
+  { value: "pending", label: "Pending" },
+];
 
 export const Route = createFileRoute("/_authenticated/candidates/$id")({
   component: CandidateDetail,
@@ -69,6 +83,27 @@ function CandidateDetail() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [linkedinSummary, setLinkedinSummary] = useState("");
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const updateStatus = async (status: string) => {
+    if (!data) return;
+    try {
+      setUpdatingStatus(true);
+      const { error } = await supabase
+        .from("candidates")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success(`Status set to ${status}`);
+      await qc.invalidateQueries({ queryKey: ["candidate", id] });
+      await qc.invalidateQueries({ queryKey: ["candidates"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data) return null;
@@ -151,7 +186,25 @@ function CandidateDetail() {
               )}
             </div>
           </div>
-          <StatusBadge status={candidate.status} />
+          <div className="flex flex-col items-end gap-2">
+            <StatusBadge status={candidate.status} />
+            <Select
+              value={candidate.status}
+              onValueChange={updateStatus}
+              disabled={updatingStatus}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Change status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
