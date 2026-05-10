@@ -148,6 +148,41 @@ function UploadPage() {
         <p className="text-xs text-muted-foreground">{jd.length} / 20000</p>
       </div>
 
+      <div className="glass space-y-4 rounded-2xl p-5">
+        <div>
+          <h2 className="text-sm font-semibold">LinkedIn profile (optional)</h2>
+          <p className="text-xs text-muted-foreground">
+            Provide a LinkedIn URL and paste the profile&apos;s About / Experience text. The AI cross-checks
+            it against the resume to refine the ATS score and recommendation.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="li-url">LinkedIn URL</Label>
+          <Input
+            id="li-url"
+            type="url"
+            placeholder="https://www.linkedin.com/in/username"
+            value={linkedinUrl}
+            onChange={(e) => setLinkedinUrl(e.target.value)}
+            disabled={busy}
+            maxLength={500}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="li-sum">LinkedIn summary / experience text</Label>
+          <Textarea
+            id="li-sum"
+            rows={5}
+            placeholder="Paste the About + Experience sections from the candidate's LinkedIn."
+            value={linkedinSummary}
+            onChange={(e) => setLinkedinSummary(e.target.value)}
+            disabled={busy}
+            maxLength={15000}
+          />
+          <p className="text-xs text-muted-foreground">{linkedinSummary.length} / 15000</p>
+        </div>
+      </div>
+
       <div className="flex items-center gap-3">
         <Button
           onClick={run}
