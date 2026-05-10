@@ -83,6 +83,27 @@ function CandidateDetail() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [linkedinSummary, setLinkedinSummary] = useState("");
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const updateStatus = async (status: string) => {
+    if (!data) return;
+    try {
+      setUpdatingStatus(true);
+      const { error } = await supabase
+        .from("candidates")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success(`Status set to ${status}`);
+      await qc.invalidateQueries({ queryKey: ["candidate", id] });
+      await qc.invalidateQueries({ queryKey: ["candidates"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data) return null;
