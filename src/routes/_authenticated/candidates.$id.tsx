@@ -139,9 +139,77 @@ function CandidateDetail() {
               <span className="inline-flex items-center gap-1">
                 <FileText className="h-3.5 w-3.5" /> {candidate.file_name}
               </span>
+              {candidate.linkedin_url && (
+                <a
+                  href={candidate.linkedin_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-foreground hover:underline"
+                >
+                  <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                </a>
+              )}
             </div>
           </div>
           <StatusBadge status={candidate.status} />
+        </div>
+      </div>
+
+      <div className="glass shadow-elegant rounded-2xl p-6">
+        <div className="flex items-center gap-2">
+          <Linkedin className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold">Re-analyze with LinkedIn</h2>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add the candidate&apos;s LinkedIn URL and paste the About / Experience text. The AI will
+          cross-check it against the resume and update the ATS score and recommendation.
+        </p>
+        <div className="mt-4 grid gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="li-url">LinkedIn URL</Label>
+            <Input
+              id="li-url"
+              type="url"
+              placeholder={candidate.linkedin_url ?? "https://www.linkedin.com/in/username"}
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="li-sum">Profile text</Label>
+            <Textarea
+              id="li-sum"
+              rows={5}
+              placeholder={
+                candidate.linkedin_summary
+                  ? "Previously saved — leave blank to reuse, or paste new text."
+                  : "Paste the About + Experience sections from LinkedIn."
+              }
+              value={linkedinSummary}
+              onChange={(e) => setLinkedinSummary(e.target.value)}
+              maxLength={15000}
+            />
+          </div>
+          <div>
+            <Button
+              onClick={reanalyze}
+              disabled={reanalyzing || !analysis}
+              className="bg-gradient-primary shadow-elegant"
+            >
+              {reanalyzing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {reanalyzing ? "Re-analyzing…" : "Re-analyze with LinkedIn"}
+            </Button>
+            {!analysis && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Run the initial analysis first.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
