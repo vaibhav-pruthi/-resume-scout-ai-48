@@ -24,6 +24,8 @@ function UploadPage() {
 
   const [file, setFile] = useState<File | null>(null);
   const [jd, setJD] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [linkedinSummary, setLinkedinSummary] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [dragOver, setDragOver] = useState(false);
 
