@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Mail, Phone, FileText } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { ArrowLeft, Mail, Phone, FileText, Linkedin, Loader2, Sparkles } from "lucide-react";
 import {
   ResponsiveContainer,
   RadarChart,
@@ -10,7 +13,12 @@ import {
   Radar,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { analyzeResume } from "@/lib/resumes.functions";
 import { StatusBadge } from "./dashboard";
 
 export const Route = createFileRoute("/_authenticated/candidates/$id")({
