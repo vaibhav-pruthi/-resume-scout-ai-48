@@ -39,10 +39,15 @@ type Analysis = {
   summary: string | null;
   job_description: string;
   created_at: string;
+  linkedin_url: string | null;
+  linkedin_summary: string | null;
 };
 
 function CandidateDetail() {
   const { id } = Route.useParams();
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const analyzeFn = useServerFn(analyzeResume);
   const { data, isLoading } = useQuery({
     queryKey: ["candidate", id],
     queryFn: async () => {
@@ -61,9 +66,43 @@ function CandidateDetail() {
     },
   });
 
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [linkedinSummary, setLinkedinSummary] = useState("");
+  const [reanalyzing, setReanalyzing] = useState(false);
+
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data) return null;
   const { candidate, analysis } = data;
+  const effectiveUrl = linkedinUrl || candidate.linkedin_url || "";
+  const effectiveSummary = linkedinSummary || candidate.linkedin_summary || "";
+
+  const reanalyze = async () => {
+    if (!session || !analysis) return;
+    if (!effectiveUrl && !effectiveSummary.trim()) {
+      toast.error("Add a LinkedIn URL or paste profile text first.");
+      return;
+    }
+    try {
+      setReanalyzing(true);
+      const res = await analyzeFn({
+        data: {
+          accessToken: session.access_token,
+          candidateId: candidate.id,
+          jobDescription: analysis.job_description,
+          linkedinUrl: effectiveUrl || undefined,
+          linkedinSummary: effectiveSummary || undefined,
+        },
+      });
+      toast.success(`Re-analyzed with LinkedIn · ATS ${res.atsScore}/100`);
+      await qc.invalidateQueries({ queryKey: ["candidate", id] });
+      setLinkedinUrl("");
+      setLinkedinSummary("");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Re-analysis failed");
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   const radar = analysis
     ? [
