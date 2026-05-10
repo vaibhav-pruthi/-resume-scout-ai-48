@@ -12,6 +12,15 @@ const analyzeSchema = z.object({
   accessToken: z.string().min(10),
   candidateId: z.string().uuid(),
   jobDescription: z.string().min(20).max(20000),
+  linkedinUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(500)
+    .refine((u) => /linkedin\.com/i.test(u), "Must be a LinkedIn URL")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  linkedinSummary: z.string().max(15000).optional(),
 });
 
 function extractContacts(text: string) {
