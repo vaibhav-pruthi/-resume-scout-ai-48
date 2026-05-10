@@ -243,12 +243,12 @@ Generate 5-7 sharp interview questions tailored to the gaps you found.`;
         : parsed.recommendation === "review"
           ? "review"
           : "shortlisted";
-    const candidateUpdate: Record<string, unknown> = {
+    const candidateUpdate = {
       status,
       name: cand.data.name || parsed.candidateName || null,
+      ...(data.linkedinUrl ? { linkedin_url: data.linkedinUrl } : {}),
+      ...(data.linkedinSummary ? { linkedin_summary: data.linkedinSummary } : {}),
     };
-    if (data.linkedinUrl) candidateUpdate.linkedin_url = data.linkedinUrl;
-    if (data.linkedinSummary) candidateUpdate.linkedin_summary = data.linkedinSummary;
     await sb.from("candidates").update(candidateUpdate).eq("id", data.candidateId);
 
     return { analysisId: ins.data.id, ...parsed, status };
