@@ -229,6 +229,8 @@ Generate 5-7 sharp interview questions tailored to the gaps you found.`;
         interview_questions: parsed.interviewQuestions ?? [],
         recommendation: parsed.recommendation ?? "review",
         summary: parsed.summary ?? null,
+        linkedin_url: data.linkedinUrl ?? null,
+        linkedin_summary: data.linkedinSummary ?? null,
       })
       .select("id")
       .single();
@@ -241,13 +243,13 @@ Generate 5-7 sharp interview questions tailored to the gaps you found.`;
         : parsed.recommendation === "review"
           ? "review"
           : "shortlisted";
-    await sb
-      .from("candidates")
-      .update({
-        status,
-        name: cand.data.name || parsed.candidateName || null,
-      })
-      .eq("id", data.candidateId);
+    const candidateUpdate: Record<string, unknown> = {
+      status,
+      name: cand.data.name || parsed.candidateName || null,
+    };
+    if (data.linkedinUrl) candidateUpdate.linkedin_url = data.linkedinUrl;
+    if (data.linkedinSummary) candidateUpdate.linkedin_summary = data.linkedinSummary;
+    await sb.from("candidates").update(candidateUpdate).eq("id", data.candidateId);
 
     return { analysisId: ins.data.id, ...parsed, status };
   });
