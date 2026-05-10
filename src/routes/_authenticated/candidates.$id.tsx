@@ -18,8 +18,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { analyzeResume } from "@/lib/resumes.functions";
 import { StatusBadge } from "./dashboard";
+
+const STATUS_OPTIONS = [
+  { value: "shortlisted", label: "Shortlisted" },
+  { value: "review", label: "Review" },
+  { value: "rejected", label: "Rejected" },
+  { value: "pending", label: "Pending" },
+];
 
 export const Route = createFileRoute("/_authenticated/candidates/$id")({
   component: CandidateDetail,
