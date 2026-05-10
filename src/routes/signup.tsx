@@ -37,17 +37,22 @@ function SignupPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       ...parsed.data,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+      options: { emailRedirectTo: `${window.location.origin}/login` },
     });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       toast.error(error.message);
       return;
     }
-    toast.success("Account created!");
-    navigate({ to: "/dashboard" });
+    // Force the user to sign in explicitly after creating the account.
+    if (data.session) {
+      await supabase.auth.signOut();
+    }
+    setBusy(false);
+    toast.success("Account created! Please sign in to continue.");
+    navigate({ to: "/login" });
   };
 
   return (
