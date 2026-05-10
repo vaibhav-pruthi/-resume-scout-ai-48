@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analyses: {
+        Row: {
+          ats_score: number
+          candidate_id: string
+          communication_score: number
+          created_at: string
+          experience_score: number
+          id: string
+          interview_questions: Json
+          job_description: string
+          missing_skills: Json
+          recommendation: string
+          strengths: Json
+          summary: string | null
+          technical_score: number
+          user_id: string
+          weaknesses: Json
+        }
+        Insert: {
+          ats_score?: number
+          candidate_id: string
+          communication_score?: number
+          created_at?: string
+          experience_score?: number
+          id?: string
+          interview_questions?: Json
+          job_description: string
+          missing_skills?: Json
+          recommendation?: string
+          strengths?: Json
+          summary?: string | null
+          technical_score?: number
+          user_id: string
+          weaknesses?: Json
+        }
+        Update: {
+          ats_score?: number
+          candidate_id?: string
+          communication_score?: number
+          created_at?: string
+          experience_score?: number
+          id?: string
+          interview_questions?: Json
+          job_description?: string
+          missing_skills?: Json
+          recommendation?: string
+          strengths?: Json
+          summary?: string | null
+          technical_score?: number
+          user_id?: string
+          weaknesses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analyses_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidates: {
+        Row: {
+          created_at: string
+          email: string | null
+          file_name: string
+          file_path: string
+          id: string
+          name: string | null
+          phone: string | null
+          raw_text: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          raw_text?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          raw_text?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
