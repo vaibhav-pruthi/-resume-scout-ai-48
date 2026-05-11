@@ -56,6 +56,20 @@ const STATUS_OPTIONS: { value: StatusValue; label: string }[] = [
   { value: "pending", label: "Pending" },
 ];
 
+function recommendationToStatus(rec: string): StatusValue {
+  switch (rec) {
+    case "strong_hire":
+    case "hire":
+      return "shortlisted";
+    case "reject":
+      return "rejected";
+    case "review":
+      return "review";
+    default:
+      return "pending";
+  }
+}
+
 export const Route = createFileRoute("/_authenticated/candidates/$id")({
   component: CandidateDetail,
 });
