@@ -56,6 +56,20 @@ const STATUS_OPTIONS: { value: StatusValue; label: string }[] = [
   { value: "pending", label: "Pending" },
 ];
 
+function recommendationToStatus(rec: string): StatusValue {
+  switch (rec) {
+    case "strong_hire":
+    case "hire":
+      return "shortlisted";
+    case "reject":
+      return "rejected";
+    case "review":
+      return "review";
+    default:
+      return "pending";
+  }
+}
+
 export const Route = createFileRoute("/_authenticated/candidates/$id")({
   component: CandidateDetail,
 });
@@ -273,18 +287,6 @@ function CandidateDetail() {
                 </a>
               )}
             </div>
-            {analysis && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                AI recommendation:{" "}
-                <span className="font-semibold capitalize text-foreground">
-                  {analysis.recommendation.replace("_", " ")}
-                </span>{" "}
-                · HR final status:{" "}
-                <span className="font-semibold capitalize text-foreground">
-                  {candidate.status}
-                </span>
-              </p>
-            )}
           </div>
           <div className="flex w-full max-w-sm flex-col items-stretch gap-2 sm:w-auto">
             <div className="flex justify-end">
@@ -314,6 +316,54 @@ function CandidateDetail() {
           </div>
         </div>
       </div>
+
+      {/* AI vs HR side-by-side */}
+      {analysis && (
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
+          <div className="glass shadow-elegant rounded-2xl p-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                AI recommendation
+              </h3>
+            </div>
+            <p className="text-gradient mt-3 text-2xl font-bold capitalize">
+              {analysis.recommendation.replace("_", " ")}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Maps to suggested status:{" "}
+              <span className="font-medium capitalize text-foreground">
+                {recommendationToStatus(analysis.recommendation)}
+              </span>
+            </p>
+            <div className="mt-3">
+              <StatusBadge status={recommendationToStatus(analysis.recommendation)} />
+            </div>
+          </div>
+
+          <div className="hidden items-center justify-center text-2xl text-muted-foreground sm:flex">
+            →
+          </div>
+
+          <div className="glass shadow-elegant rounded-2xl border-primary/30 p-6">
+            <div className="flex items-center gap-2">
+              <StickyNote className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                HR final status
+              </h3>
+            </div>
+            <p className="mt-3 text-2xl font-bold capitalize">{candidate.status}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {candidate.status === recommendationToStatus(analysis.recommendation)
+                ? "Matches AI recommendation."
+                : "Manually overridden by HR."}
+            </p>
+            <div className="mt-3">
+              <StatusBadge status={candidate.status} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HR Notes */}
       <div className="glass shadow-elegant rounded-2xl p-6">
