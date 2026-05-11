@@ -273,18 +273,6 @@ function CandidateDetail() {
                 </a>
               )}
             </div>
-            {analysis && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                AI recommendation:{" "}
-                <span className="font-semibold capitalize text-foreground">
-                  {analysis.recommendation.replace("_", " ")}
-                </span>{" "}
-                · HR final status:{" "}
-                <span className="font-semibold capitalize text-foreground">
-                  {candidate.status}
-                </span>
-              </p>
-            )}
           </div>
           <div className="flex w-full max-w-sm flex-col items-stretch gap-2 sm:w-auto">
             <div className="flex justify-end">
