@@ -92,7 +92,11 @@ function Dashboard() {
                       borderRadius: 8,
                     }}
                   />
-                  <Bar dataKey="score" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                    {ranked.map((_, i) => (
+                      <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
