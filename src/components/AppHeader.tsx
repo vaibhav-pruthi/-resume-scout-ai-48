@@ -40,6 +40,14 @@ export function AppHeader() {
               >
                 Candidates
               </Link>
+              <span className="hidden items-center gap-2 sm:inline-flex">
+                <span className="bg-gradient-primary flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground shadow-elegant">
+                  {getInitials(getDisplayName(user))}
+                </span>
+                <span className="text-sm font-medium text-foreground">
+                  {getDisplayName(user)}
+                </span>
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
