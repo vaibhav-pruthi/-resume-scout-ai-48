@@ -70,6 +70,10 @@ function SignupPage() {
           <p className="mt-1 text-sm text-muted-foreground">Start shortlisting in 60 seconds.</p>
           <form className="mt-6 space-y-4" onSubmit={onSubmit}>
             <div className="space-y-1.5">
+              <Label htmlFor="fullName">Full name</Label>
+              <Input id="fullName" type="text" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="email">Work email</Label>
               <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
