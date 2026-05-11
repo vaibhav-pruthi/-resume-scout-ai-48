@@ -11,6 +11,17 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
+const BAR_COLORS = [
+  "hsl(221 83% 60%)",
+  "hsl(160 70% 45%)",
+  "hsl(38 92% 55%)",
+  "hsl(280 70% 60%)",
+  "hsl(340 80% 60%)",
+  "hsl(190 80% 50%)",
+  "hsl(15 85% 60%)",
+  "hsl(120 55% 50%)",
+];
+
 type Row = {
   id: string;
   name: string | null;
