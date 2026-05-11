@@ -23,6 +23,7 @@ function SignupPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -32,15 +33,19 @@ function SignupPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
+    const parsed = schema.safeParse({ fullName, email, password });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
-      ...parsed.data,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
+      email: parsed.data.email,
+      password: parsed.data.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+        data: { full_name: parsed.data.fullName },
+      },
     });
     if (error) {
       setBusy(false);
