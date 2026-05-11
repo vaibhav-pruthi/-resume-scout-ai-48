@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Users, CheckCircle2, XCircle, Trophy, Upload as UploadIcon } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,17 @@ import { Badge } from "@/components/ui/badge";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
+
+const BAR_COLORS = [
+  "hsl(221 83% 60%)",
+  "hsl(160 70% 45%)",
+  "hsl(38 92% 55%)",
+  "hsl(280 70% 60%)",
+  "hsl(340 80% 60%)",
+  "hsl(190 80% 50%)",
+  "hsl(15 85% 60%)",
+  "hsl(120 55% 50%)",
+];
 
 type Row = {
   id: string;
@@ -92,7 +103,11 @@ function Dashboard() {
                       borderRadius: 8,
                     }}
                   />
-                  <Bar dataKey="score" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                    {ranked.map((_, i) => (
+                      <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
