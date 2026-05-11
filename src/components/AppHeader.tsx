@@ -3,6 +3,20 @@ import { Brain, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
+function getDisplayName(user: { email?: string | null; user_metadata?: Record<string, any> } | null): string {
+  const meta = user?.user_metadata ?? {};
+  return (meta.full_name as string) || (meta.name as string) || (user?.email?.split("@")[0] ?? "User");
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "U";
+}
+
 export function AppHeader() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -40,6 +54,14 @@ export function AppHeader() {
               >
                 Candidates
               </Link>
+              <span className="hidden items-center gap-2 sm:inline-flex">
+                <span className="bg-gradient-primary flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground shadow-elegant">
+                  {getInitials(getDisplayName(user))}
+                </span>
+                <span className="text-sm font-medium text-foreground">
+                  {getDisplayName(user)}
+                </span>
+              </span>
               <Button
                 variant="ghost"
                 size="sm"

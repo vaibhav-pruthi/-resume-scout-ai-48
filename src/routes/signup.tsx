@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const schema = z.object({
+  fullName: z.string().trim().min(2, "Please enter your name").max(80),
   email: z.string().trim().email().max(255),
   password: z.string().min(8, "Use at least 8 characters").max(128),
 });
@@ -22,6 +23,7 @@ function SignupPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -31,15 +33,19 @@ function SignupPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
+    const parsed = schema.safeParse({ fullName, email, password });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
-      ...parsed.data,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
+      email: parsed.data.email,
+      password: parsed.data.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+        data: { full_name: parsed.data.fullName },
+      },
     });
     if (error) {
       setBusy(false);
@@ -63,6 +69,10 @@ function SignupPage() {
           <h1 className="text-2xl font-bold">Create your account</h1>
           <p className="mt-1 text-sm text-muted-foreground">Start shortlisting in 60 seconds.</p>
           <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+            <div className="space-y-1.5">
+              <Label htmlFor="fullName">Full name</Label>
+              <Input id="fullName" type="text" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Work email</Label>
               <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
