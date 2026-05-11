@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const schema = z.object({
+  fullName: z.string().trim().min(2, "Please enter your name").max(80),
   email: z.string().trim().email().max(255),
   password: z.string().min(8, "Use at least 8 characters").max(128),
 });
